@@ -2,110 +2,701 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专属喝水记录器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>爱吃火鸡面的专属水吧 🥤</title>
     <style>
-        /* 这里是界面样式，可以根据她的喜好修改颜色 */
-        body { 
-            font-family: sans-serif; 
-            text-align: center; 
-            background-color: #fff0f5; /* 淡粉色背景 */
-            padding-top: 80px; 
+        :root {
+            --primary-color: #ffb6c1; /* 浅粉色 */
+            --secondary-color: #ffc0cb;
+            --water-color-1: #a1c4fd;
+            --water-color-2: #c2e9fb;
+            --bg-gradient: linear-gradient(135deg, #fff0f5 0%, #ffe4e1 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #5c4b51;
+            --text-light: #907e84;
+            --shadow: 0 8px 32px rgba(255, 182, 193, 0.2);
+        }
+
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-        .container { 
-            background: white; 
-            padding: 30px 20px; 
-            border-radius: 20px; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
-            display: inline-block; 
-            width: 80%; 
-            max-width: 320px; 
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-x: hidden;
+            padding: 20px 15px;
         }
-        h1 { color: #ff6b81; font-size: 24px; margin-bottom: 10px; }
-        .count-area { font-size: 56px; font-weight: bold; color: #ff4757; margin: 20px 0; }
-        .target-text { font-size: 24px; color: #a4b0be; }
-        button { 
-            background-color: #ff6b81; 
-            color: white; 
-            border: none; 
-            padding: 15px 40px; 
-            font-size: 18px; 
-            border-radius: 30px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(255,107,129,0.3);
-            transition: transform 0.1s;
+
+        /* 核心容器（模拟手机App视图） */
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 25px 20px;
+            position: relative;
         }
-        button:active { transform: scale(0.95); /* 点击时的缩放动画 */ }
-        .message { 
-            margin-top: 25px; 
-            color: #ff4757; 
-            font-weight: bold; 
-            font-size: 18px; 
+
+        /* 顶部欢迎区 */
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #d17a8c;
+            margin-bottom: 5px;
+        }
+        .header p {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        /* 水杯可视化区域 */
+        .visual-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .cup-wrapper {
+            position: relative;
+            width: 140px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 6px solid #fff;
+            border-radius: 15px 15px 50px 50px;
+            box-shadow: inset 0 0 20px rgba(161, 196, 253, 0.3), 0 10px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .cup-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            width: 10px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            filter: blur(2px);
+            z-index: 3;
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%; /* 由JS控制 */
+            background: linear-gradient(180deg, var(--water-color-1) 0%, var(--water-color-2) 100%);
+            transition: height 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+        }
+
+        /* 水波纹效果 */
+        .water::before, .water::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            top: -290px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 40%;
+            background: rgba(255, 255, 255, 0.8);
+            animation: wave 6s infinite linear;
+            z-index: 2;
+        }
+        .water::after {
+            background: rgba(255, 255, 255, 0.5);
+            animation: wave 8s infinite linear;
+            border-radius: 45%;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            100% { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        .progress-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: #7b9ed1;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .progress-text span {
+            font-size: 14px;
+            color: var(--text-light);
+            font-weight: normal;
+        }
+
+        /* 进度条 */
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--water-color-1), var(--primary-color));
+            border-radius: 10px;
+            transition: width 0.8s ease;
+        }
+
+        /* 喝水按钮 */
+        .action-btn {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(255, 154, 158, 0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 5px 10px rgba(255, 154, 158, 0.3);
+        }
+        
+        /* 鼓励语动画区域 */
+        .message-area {
+            text-align: center;
             min-height: 24px;
+            font-size: 14px;
+            color: #d17a8c;
+            font-weight: 600;
+            margin-top: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
         }
+        .message-area.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 数据与设置栏 */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .stat-box {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .edit-goal {
+            font-size: 12px;
+            color: #7b9ed1;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* 时间轴 */
+        .timeline-card {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .timeline-card::-webkit-scrollbar {
+            width: 4px;
+        }
+        .timeline-card::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        .timeline-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .timeline-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            position: relative;
+        }
+        .timeline-item::before {
+            content: '💧';
+            font-size: 14px;
+            background: #f0f4f8;
+            border-radius: 50%;
+            padding: 4px;
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 25px;
+            width: 2px;
+            height: 12px;
+            background: #e2e8f0;
+        }
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        .timeline-time {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .timeline-desc {
+            color: var(--text-main);
+        }
+        .empty-timeline {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 13px;
+            padding: 10px 0;
+        }
+
+        /* 底部小贴士 */
+        .tips-card {
+            background: linear-gradient(to right, #f6d365 0%, #fda085 100%);
+            color: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(253, 160, 133, 0.3);
+        }
+
+        /* 庆祝动画容器 */
+        #confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            font-size: 24px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg) scale(0); opacity: 1; }
+            10% { transform: translateY(10vh) rotate(45deg) scale(1.2); }
+            100% { transform: translateY(110vh) rotate(720deg) scale(1); opacity: 0; }
+        }
+
+        /* 弹出层 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: #fff;
+            padding: 25px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 2px solid #f0f4f8;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+            color: var(--text-main);
+        }
+        .modal input:focus {
+            border-color: var(--primary-color);
+        }
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-btns button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-cancel { background: #f0f4f8; color: var(--text-light); }
+        .btn-confirm { background: var(--primary-color); color: #fff; }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>今天乖乖喝水了吗？</h1>
-        <div class="count-area">
-            <span id="current">0</span> <span class="target-text">/ <span id="target">8</span> 杯</span>
+
+    <div class="app-container">
+        <header class="header">
+            <h1>爱吃火鸡面的专属水吧 🥤</h1>
+            <p id="current-date">今天也要做水当当的小仙女哦</p>
+        </header>
+
+        <section class="card visual-section">
+            <div class="cup-wrapper">
+                <div class="water" id="water-level"></div>
+            </div>
+            <div style="width: 100%;">
+                <div class="progress-text">
+                    <span id="current-cups">0</span>
+                    <span>/</span>
+                    <span id="goal-cups">8</span>
+                    <span>杯</span>
+                    <span style="flex-grow: 1; text-align: right; font-size: 16px;" id="percent-text">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <button class="action-btn" id="drink-btn">喝水了 💧 (+1)</button>
+            <div class="message-area" id="message-area">宝贝真棒，继续保持！</div>
+        </section>
+
+        <section class="stats-row">
+            <div class="stat-box">
+                <span class="stat-label">连续打卡</span>
+                <span class="stat-value"><span id="streak-days">0</span> 天 🔥</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">每日目标</span>
+                <span class="stat-value"><span id="target-display">8</span> 杯</span>
+                <span class="edit-goal" id="edit-goal-btn">修改目标</span>
+            </div>
+        </section>
+
+        <section class="card timeline-card">
+            <div class="timeline-title">🕒 今日喝水记录</div>
+            <ul class="timeline-list" id="timeline-list">
+                <div class="empty-timeline">今天还没有喝水哦，快去喝一杯吧~</div>
+            </ul>
+        </section>
+
+        <div class="tips-card">
+            <span style="font-size: 20px;">💡</span>
+            <span id="daily-tip">温水最养胃，不要等口渴了才想起来喝水哦！</span>
         </div>
-        <button id="drinkBtn">咕噜咕噜~ 喝完啦！</button>
-        <div class="message" id="messageBox"></div>
+    </div>
+
+    <div id="confetti-container"></div>
+
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal">
+            <h3>设置每日目标</h3>
+            <p style="font-size: 12px; color: #999; margin-top: 5px;">推荐每天喝8-10杯水哦</p>
+            <input type="number" id="goal-input" min="1" max="20" value="8">
+            <div class="modal-btns">
+                <button class="btn-cancel" id="close-modal-btn">取消</button>
+                <button class="btn-confirm" id="save-goal-btn">保存</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. 设置目标水量和鼓励的话
-        const targetGoal = 8;
-        const loveMessage = "太棒啦！今天的喝水任务完成，奖励一个亲亲！❤️";
+        // --- 核心数据状态 ---
+        let appState = {
+            date: '',
+            cups: 0,
+            goal: 8,
+            history: [], // [{ time: '10:30', desc: '咕噜咕噜' }]
+            streak: 0,
+            lastActiveDate: ''
+        };
 
-        // 2. 获取当天的日期 (用于每天自动清零)
-        function getTodayDate() {
-            return new Date().toLocaleDateString(); 
+        // --- 文案库 ---
+        const encourageMessages = [
+            "咕噜咕噜，身体水润润~ 💦",
+            "哇，离目标又近了一步！🌟",
+            "多喝水才会变得更漂亮哦！🌸",
+            "爱吃火鸡面最棒啦！❤️",
+            "不仅解渴，还能变瘦变美！✨",
+            "皮肤正在变好中... 10%... 50%... 🚀",
+            "今天也是元气满满的一天！☀️",
+            "继续加油，小仙女！🧚‍♀️"
+        ];
+
+        const timelineDescs = [
+            "咕噜咕噜", "补充水分", "吨吨吨", "变美打卡", "润润嗓子", "活力+1"
+        ];
+
+        const tips = [
+            "早晨起床喝一杯温水，唤醒身体！",
+            "饭前喝半杯水，增加饱腹感哦~",
+            "感到疲惫时？喝杯水提提神吧！",
+            "小口慢慢喝，身体更容易吸收水分。",
+            "不要用饮料代替白开水哦！"
+        ];
+
+        // --- 初始化与本地存储 ---
+        function initApp() {
+            const today = new Date().toLocaleDateString();
+            document.getElementById('current-date').textContent = `📅 ${new Date().getMonth()+1}月${new Date().getDate()}日 · 记得多喝水`;
+            document.getElementById('daily-tip').textContent = tips[Math.floor(Math.random() * tips.length)];
+
+            const savedData = localStorage.getItem('waterTracker_FireNoodle');
+            if (savedData) {
+                appState = JSON.parse(savedData);
+                
+                // 检查是否是新的一天
+                if (appState.date !== today) {
+                    // 检查连击逻辑 (如果昨天没喝，断掉)
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (appState.lastActiveDate !== yesterday.toLocaleDateString() && appState.lastActiveDate !== today) {
+                        appState.streak = 0;
+                    }
+                    
+                    appState.date = today;
+                    appState.cups = 0;
+                    appState.history = [];
+                }
+            } else {
+                appState.date = today;
+            }
+            updateUI();
         }
 
-        // 3. 读取手机本地存储的数据
-        let savedDate = localStorage.getItem('waterDate');
-        let currentCount = localStorage.getItem('waterCount');
-
-        // 4. 判断逻辑：如果是新的一天，或者还没有记录过，就重置为0
-        if (savedDate !== getTodayDate()) {
-            currentCount = 0;
-            localStorage.setItem('waterDate', getTodayDate());
-            localStorage.setItem('waterCount', currentCount);
-        } else {
-            currentCount = parseInt(currentCount) || 0;
+        function saveData() {
+            localStorage.setItem('waterTracker_FireNoodle', JSON.stringify(appState));
         }
 
-        // 5. 获取页面上的元素以便修改
-        const countDisplay = document.getElementById('current');
-        const targetDisplay = document.getElementById('target');
-        const messageBox = document.getElementById('messageBox');
-        const drinkBtn = document.getElementById('drinkBtn');
+        // --- UI 更新逻辑 ---
+        function updateUI() {
+            document.getElementById('current-cups').textContent = appState.cups;
+            document.getElementById('goal-cups').textContent = appState.goal;
+            document.getElementById('target-display').textContent = appState.goal;
+            document.getElementById('streak-days').textContent = appState.streak;
 
-        // 初始化界面
-        targetDisplay.innerText = targetGoal;
-        updateUI();
+            // 计算进度
+            let percentage = (appState.cups / appState.goal) * 100;
+            if (percentage > 100) percentage = 100;
+            
+            document.getElementById('percent-text').textContent = `${Math.round(percentage)}%`;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            
+            // 水杯水位高度
+            let waterHeight = percentage;
+            if (waterHeight > 0 && waterHeight < 15) waterHeight = 15; // 保证有水时能看到一点
+            document.getElementById('water-level').style.height = `${waterHeight}%`;
 
-        // 6. 按钮点击事件
-        drinkBtn.addEventListener('click', () => {
-            currentCount++;
-            localStorage.setItem('waterCount', currentCount); // 保存到本地
+            // 更新时间轴
+            renderTimeline();
+            saveData();
+        }
+
+        function renderTimeline() {
+            const list = document.getElementById('timeline-list');
+            list.innerHTML = '';
+            
+            if (appState.history.length === 0) {
+                list.innerHTML = '<div class="empty-timeline">今天还没有喝水哦，快去喝一杯吧~</div>';
+                return;
+            }
+
+            // 倒序显示，最新的在上面
+            [...appState.history].reverse().forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'timeline-item';
+                li.innerHTML = `
+                    <span class="timeline-time">${item.time}</span>
+                    <span class="timeline-desc">${item.desc}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // --- 核心交互逻辑 ---
+        document.getElementById('drink-btn').addEventListener('click', () => {
+            // 震动反馈 (手机支持的话)
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // 更新数据
+            appState.cups += 1;
+            
+            // 记录时间
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const randomDesc = timelineDescs[Math.floor(Math.random() * timelineDescs.length)];
+            appState.history.push({ time: timeStr, desc: randomDesc });
+
+            // 更新活跃日期和连击
+            const today = new Date().toLocaleDateString();
+            if (appState.lastActiveDate !== today) {
+                appState.streak += 1;
+                appState.lastActiveDate = today;
+            }
+
+            // 显示鼓励文案
+            showEncourageMessage();
+
+            // 检查是否达到目标
+            if (appState.cups === appState.goal) {
+                triggerCelebration();
+            }
+
             updateUI();
         });
 
-        // 7. 更新界面显示的函数
-        function updateUI() {
-            countDisplay.innerText = currentCount;
-            // 如果达标，显示鼓励语
-            if (currentCount >= targetGoal) {
-                messageBox.innerText = loveMessage;
-            } else {
-                messageBox.innerText = ""; 
+        function showEncourageMessage() {
+            const msgArea = document.getElementById('message-area');
+            msgArea.textContent = encourageMessages[Math.floor(Math.random() * encourageMessages.length)];
+            
+            // 重置动画
+            msgArea.classList.remove('show');
+            void msgArea.offsetWidth; // 触发重绘
+            msgArea.classList.add('show');
+        }
+
+        // --- 庆祝特效 (彩带动画) ---
+        function triggerCelebration() {
+            const container = document.getElementById('confetti-container');
+            const emojis = ['🌸', '✨', '💧', '🎉', '💖', '🥤'];
+            
+            // 弹出特别提示
+            setTimeout(() => {
+                alert('🎉 恭喜宝贝！今天的喝水目标完成啦！奖励一个么么哒 😘');
+            }, 500);
+
+            // 生成50个飘落元素
+            for (let i = 0; i < 50; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                // 随机位置和动画时间
+                const startLeft = Math.random() * 100;
+                const duration = 2 + Math.random() * 3;
+                const delay = Math.random() * 1;
+                
+                piece.style.left = `${startLeft}vw`;
+                piece.style.animationDuration = `${duration}s`;
+                piece.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(piece);
+
+                // 动画结束后移除
+                setTimeout(() => {
+                    piece.remove();
+                }, (duration + delay) * 1000);
             }
         }
+
+        // --- 目标设置逻辑 ---
+        const modal = document.getElementById('goal-modal');
+        const goalInput = document.getElementById('goal-input');
+
+        document.getElementById('edit-goal-btn').addEventListener('click', () => {
+            goalInput.value = appState.goal;
+            modal.style.display = 'flex';
+        });
+
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        document.getElementById('save-goal-btn').addEventListener('click', () => {
+            const newGoal = parseInt(goalInput.value);
+            if (newGoal && newGoal > 0 && newGoal <= 50) {
+                appState.goal = newGoal;
+                updateUI();
+                modal.style.display = 'none';
+            } else {
+                alert('请输入一个合理的数字哦~');
+            }
+        });
+
+        // 启动应用
+        initApp();
+
     </script>
 </body>
 </html>

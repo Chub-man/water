@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专属喝水记录器</title>
+    <style>
+        /* 这里是界面样式，可以根据她的喜好修改颜色 */
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background-color: #fff0f5; /* 淡粉色背景 */
+            padding-top: 80px; 
+            margin: 0;
+        }
+        .container { 
+            background: white; 
+            padding: 30px 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+            display: inline-block; 
+            width: 80%; 
+            max-width: 320px; 
+        }
+        h1 { color: #ff6b81; font-size: 24px; margin-bottom: 10px; }
+        .count-area { font-size: 56px; font-weight: bold; color: #ff4757; margin: 20px 0; }
+        .target-text { font-size: 24px; color: #a4b0be; }
+        button { 
+            background-color: #ff6b81; 
+            color: white; 
+            border: none; 
+            padding: 15px 40px; 
+            font-size: 18px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(255,107,129,0.3);
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); /* 点击时的缩放动画 */ }
+        .message { 
+            margin-top: 25px; 
+            color: #ff4757; 
+            font-weight: bold; 
+            font-size: 18px; 
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>今天乖乖喝水了吗？</h1>
+        <div class="count-area">
+            <span id="current">0</span> <span class="target-text">/ <span id="target">8</span> 杯</span>
+        </div>
+        <button id="drinkBtn">咕噜咕噜~ 喝完啦！</button>
+        <div class="message" id="messageBox"></div>
+    </div>
+
+    <script>
+        // 1. 设置目标水量和鼓励的话
+        const targetGoal = 8;
+        const loveMessage = "太棒啦！今天的喝水任务完成，奖励一个亲亲！❤️";
+
+        // 2. 获取当天的日期 (用于每天自动清零)
+        function getTodayDate() {
+            return new Date().toLocaleDateString(); 
+        }
+
+        // 3. 读取手机本地存储的数据
+        let savedDate = localStorage.getItem('waterDate');
+        let currentCount = localStorage.getItem('waterCount');
+
+        // 4. 判断逻辑：如果是新的一天，或者还没有记录过，就重置为0
+        if (savedDate !== getTodayDate()) {
+            currentCount = 0;
+            localStorage.setItem('waterDate', getTodayDate());
+            localStorage.setItem('waterCount', currentCount);
+        } else {
+            currentCount = parseInt(currentCount) || 0;
+        }
+
+        // 5. 获取页面上的元素以便修改
+        const countDisplay = document.getElementById('current');
+        const targetDisplay = document.getElementById('target');
+        const messageBox = document.getElementById('messageBox');
+        const drinkBtn = document.getElementById('drinkBtn');
+
+        // 初始化界面
+        targetDisplay.innerText = targetGoal;
+        updateUI();
+
+        // 6. 按钮点击事件
+        drinkBtn.addEventListener('click', () => {
+            currentCount++;
+            localStorage.setItem('waterCount', currentCount); // 保存到本地
+            updateUI();
+        });
+
+        // 7. 更新界面显示的函数
+        function updateUI() {
+            countDisplay.innerText = currentCount;
+            // 如果达标，显示鼓励语
+            if (currentCount >= targetGoal) {
+                messageBox.innerText = loveMessage;
+            } else {
+                messageBox.innerText = ""; 
+            }
+        }
+    </script>
+</body>
+</html>
